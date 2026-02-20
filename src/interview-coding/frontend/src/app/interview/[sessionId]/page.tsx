@@ -178,9 +178,9 @@ export default function InterviewPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen overflow-hidden flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b px-6 py-4">
+      <header className="shrink-0 bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -232,10 +232,10 @@ export default function InterviewPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full grid grid-cols-12 gap-4 p-4">
+      <div className="flex-1 min-h-0 p-4 pb-8">
+        <div className="h-full grid grid-cols-12 gap-4">
           {/* Left Panel - Question Display */}
-          <div className="col-span-4 h-full">
+          <div className="col-span-4 min-h-0">
             <QuestionDisplay
               question={mockQuestion}
               showHints={true}
@@ -245,7 +245,7 @@ export default function InterviewPage() {
           </div>
 
           {/* Middle Panel - Code Editor */}
-          <div className="col-span-5 h-full">
+          <div className="col-span-5 min-h-0">
             <CodeEditor
               value={code}
               onChange={setCode}
@@ -255,7 +255,7 @@ export default function InterviewPage() {
           </div>
 
           {/* Right Panel - Chat */}
-          <div className="col-span-3 h-full">
+          <div className="col-span-3 min-h-0">
             <ChatPanel
               messages={messages}
               onSendMessage={handleSendMessage}
@@ -264,7 +264,7 @@ export default function InterviewPage() {
             />
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
