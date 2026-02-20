@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Send, Bot, User } from 'lucide-react';
+import { VoiceControls } from './VoiceControls';
 import type { ChatPanelProps, Message, MessageType, MessageSender } from '@/lib/types';
 
 // Mock interview data for development
@@ -41,11 +42,28 @@ export function ChatPanel({
   disabled = false
 }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState('');
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [messages]);
 
   const handleSend = () => {
     if (inputValue.trim() && !disabled) {
       onSendMessage(inputValue.trim(), 'text' as MessageType);
       setInputValue('');
+    }
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    if (transcript && !disabled) {
+      setInputValue(transcript);
     }
   };
 
@@ -86,13 +104,18 @@ export function ChatPanel({
   };
 
   return (
-    <Card className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <h3 className="text-sm font-medium">Interview Chat</h3>
+    <Card className="flex flex-col h-full overflow-hidden">
+      <div className="shrink-0 p-4 border-b">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Interview Chat</h3>
+          <div className="relative">
+            <VoiceControls onTranscriptComplete={handleVoiceTranscript} />
+          </div>
+        </div>
       </div>
       
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 min-h-0 p-4">
+        <div className="space-y-4 pb-4">
           {messages.map((message, index) => (
             <div key={message.id} className="space-y-2">
               <div className={`flex items-start gap-3 ${
@@ -157,7 +180,7 @@ export function ChatPanel({
         </div>
       </ScrollArea>
       
-      <div className="p-4 border-t">
+      <div className="shrink-0 p-4 border-t bg-background">
         <div className="flex gap-2">
           <Textarea
             value={inputValue}
@@ -165,13 +188,13 @@ export function ChatPanel({
             onKeyPress={handleKeyPress}
             placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
             disabled={disabled}
-            className="min-h-[60px] resize-none"
+            className="min-h-[60px] max-h-[120px] resize-none"
           />
           <Button
             onClick={handleSend}
             disabled={!inputValue.trim() || disabled || isLoading}
             size="icon"
-            className="h-[60px] w-[60px]"
+            className="h-[60px] w-[60px] shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>

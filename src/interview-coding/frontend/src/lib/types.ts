@@ -25,7 +25,7 @@ export enum Difficulty {
 // Agent State Management
 export interface AgentState {
   phase: AgentPhase;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   conversationHistory: Message[];
   currentQuestion?: Question;
   hintsGiven: number;
@@ -221,7 +221,7 @@ export interface ErrorEvent {
   type: 'error';
   message: string;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
 // Voice and Audio Types
@@ -248,7 +248,7 @@ export interface CodeEditorProps {
   theme?: string;
   readOnly?: boolean;
   height?: string;
-  options?: any;
+  options?: Record<string, unknown>;
 }
 
 export interface ChatPanelProps {
@@ -298,7 +298,7 @@ export interface FeedbackSection {
 }
 
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -363,8 +363,8 @@ export interface UseVoiceReturn {
 }
 
 // Utility Types
-export type EventHandler<T = any> = (event: T) => void;
-export type AsyncEventHandler<T = any> = (event: T) => Promise<void>;
+export type EventHandler<T = unknown> = (event: T) => void;
+export type AsyncEventHandler<T = unknown> = (event: T) => Promise<void>;
 
 // Constants
 export const DEFAULT_CODE_EDITOR_OPTIONS = {

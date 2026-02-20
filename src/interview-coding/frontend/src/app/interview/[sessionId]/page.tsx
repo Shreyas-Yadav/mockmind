@@ -7,8 +7,9 @@ import { CodeEditor } from '@/components/CodeEditor';
 import { ChatPanel } from '@/components/ChatPanel';
 import { QuestionDisplay } from '@/components/QuestionDisplay';
 import { ArrowLeft, Play, RotateCcw } from 'lucide-react';
+import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { MessageType, MessageSender, HintType } from '@/lib/types';
-import type { Message, Question, Difficulty } from '@/lib/types';
+import type { Question, Difficulty } from '@/lib/types';
 
 // Mock data for development
 const mockQuestion: Question = {
@@ -78,19 +79,23 @@ export default function InterviewPage() {
   const router = useRouter();
   const sessionId = params.sessionId as string;
   
+  // Use the real interview session hook with mock mode enabled
+  const {
+    session,
+    messages,
+    connectionState,
+    sendMessage,
+    submitCode,
+    requestHint,
+  } = useInterviewSession({
+    sessionId,
+    useMockData: true, // Enable mock mode for testing without backend
+    autoConnect: false, // Don't auto-connect in mock mode
+  });
+  
   const [code, setCode] = useState(initialCode);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: MessageType.TEXT,
-      content: 'Welcome to your coding interview! I\'ve loaded the problem for you. Take your time to read through it, and feel free to ask any clarifying questions.',
-      timestamp: new Date().toISOString(),
-      sender: MessageSender.AGENT
-    }
-  ]);
   const [hintsRevealed, setHintsRevealed] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [isChatLoading, setIsChatLoading] = useState(false);
 
   // Validate session on mount
   useEffect(() => {
@@ -99,52 +104,24 @@ export default function InterviewPage() {
       return;
     }
     
-    // In a real implementation, we would validate the session with the backend
     console.log('Interview session started:', sessionId);
-  }, [sessionId, router]);
+    console.log('Connection state:', connectionState);
+    console.log('Session data:', session);
+  }, [sessionId, router, connectionState, session]);
 
   const handleSendMessage = (content: string, type: MessageType) => {
-    // Add user message
-    const userMessage: Message = {
-      id: `msg_${Date.now()}`,
-      type,
-      content,
-      timestamp: new Date().toISOString(),
-      sender: MessageSender.USER
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setIsChatLoading(true);
-    
-    // Simulate agent response
-    setTimeout(() => {
-      const agentMessage: Message = {
-        id: `msg_${Date.now()}_agent`,
-        type: MessageType.TEXT,
-        content: 'That\'s a great question! Let me help you with that. In a real interview, I would provide contextual guidance based on your question.',
-        timestamp: new Date().toISOString(),
-        sender: MessageSender.AGENT
-      };
-      
-      setMessages(prev => [...prev, agentMessage]);
-      setIsChatLoading(false);
-    }, 1500);
+    // Use the real hook's sendMessage function
+    sendMessage(content, type);
   };
 
   const handleRunCode = () => {
     setIsRunning(true);
     
-    // Simulate code execution
+    // Use the real hook's submitCode function
+    submitCode(code, 'python', true);
+    
+    // Reset running state after a delay
     setTimeout(() => {
-      const executionMessage: Message = {
-        id: `msg_${Date.now()}_exec`,
-        type: MessageType.SYSTEM,
-        content: 'Code execution completed. In a real implementation, this would show test results and feedback.',
-        timestamp: new Date().toISOString(),
-        sender: MessageSender.SYSTEM
-      };
-      
-      setMessages(prev => [...prev, executionMessage]);
       setIsRunning(false);
     }, 2000);
   };
@@ -152,16 +129,8 @@ export default function InterviewPage() {
   const handleRequestHint = () => {
     if (hintsRevealed < mockQuestion.hints.length) {
       setHintsRevealed(prev => prev + 1);
-      
-      const hintMessage: Message = {
-        id: `msg_${Date.now()}_hint`,
-        type: MessageType.HINT,
-        content: `Hint ${hintsRevealed + 1}: ${mockQuestion.hints[hintsRevealed].content}`,
-        timestamp: new Date().toISOString(),
-        sender: MessageSender.AGENT
-      };
-      
-      setMessages(prev => [...prev, hintMessage]);
+      // Use the real hook's requestHint function
+      requestHint();
     }
   };
 
@@ -259,7 +228,7 @@ export default function InterviewPage() {
             <ChatPanel
               messages={messages}
               onSendMessage={handleSendMessage}
-              isLoading={isChatLoading}
+              isLoading={false}
               disabled={false}
             />
           </div>
