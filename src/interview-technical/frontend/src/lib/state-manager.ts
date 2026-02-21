@@ -14,6 +14,8 @@ interface InterviewState {
   isPlayingAudio: boolean;
   autoPlayEvaluation: boolean;
   messages: ChatMessage[];
+  interviewStarted: boolean;
+  initialGreetingText: string | null;
   setTranscript: (t: string) => void;
   appendTranscript: (chunk: string) => void;
   setPreviousState: (s: string) => void;
@@ -22,6 +24,8 @@ interface InterviewState {
   setPlayingAudio: (v: boolean) => void;
   setAutoPlayEvaluation: (v: boolean) => void;
   addMessage: (role: ChatMessage["role"], text: string) => void;
+  setInterviewStarted: (v: boolean) => void;
+  setInitialGreetingText: (t: string | null) => void;
   reset: () => void;
 }
 
@@ -33,6 +37,8 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   isPlayingAudio: false,
   autoPlayEvaluation: false,
   messages: [],
+  interviewStarted: false,
+  initialGreetingText: null,
   setTranscript: (t) => set({ transcript: t }),
   appendTranscript: (chunk) =>
     set((s) => ({ transcript: (s.transcript + " " + chunk).trim() })),
@@ -43,6 +49,8 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   setAutoPlayEvaluation: (v) => set({ autoPlayEvaluation: v }),
   addMessage: (role, text) =>
     set((s) => ({ messages: [...s.messages, { role, text }] })),
+  setInterviewStarted: (v) => set({ interviewStarted: v }),
+  setInitialGreetingText: (t) => set({ initialGreetingText: t }),
   reset: () =>
     set({
       transcript: "",
@@ -52,5 +60,7 @@ export const useInterviewStore = create<InterviewState>((set) => ({
       isPlayingAudio: false,
       autoPlayEvaluation: false,
       messages: [],
+      interviewStarted: false,
+      initialGreetingText: null,
     }),
 }));

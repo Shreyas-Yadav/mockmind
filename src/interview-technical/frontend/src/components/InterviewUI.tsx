@@ -8,9 +8,28 @@ import Whiteboard, { type WhiteboardRef } from "@/components/Whiteboard";
 import SpeechListener from "@/components/SpeechListener";
 import AudioPlayer from "@/components/AudioPlayer";
 
+const STARTER_PROBLEMS: string[] = [
+  "Explain a binary search tree and how you would implement search.",
+  "Explain how you would find the maximum subarray sum in an array (e.g. Kadane's algorithm or brute force).",
+  "What is supervised fine-tuning (SFT) in the context of large language models?",
+  "Explain linear regression: what it models and how parameters are typically learned.",
+  "Explain the difference between a stack and a queue with one use case for each.",
+  "What is overfitting in machine learning and how can you try to reduce it?",
+  "Explain how a hash map works and what average-time operations it supports.",
+];
+
+function pickStarterProblem(): string {
+  return STARTER_PROBLEMS[Math.floor(Math.random() * STARTER_PROBLEMS.length)];
+}
+
 export default function InterviewUI() {
   const whiteboardRef = useRef<WhiteboardRef | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [initialProblem, setInitialProblem] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInitialProblem(pickStarterProblem());
+  }, []);
 
   const {
     transcript,
@@ -24,7 +43,21 @@ export default function InterviewUI() {
     addMessage,
     setAutoPlayEvaluation,
     messages,
+    interviewStarted,
+    setInterviewStarted,
+    setInitialGreetingText,
   } = useInterviewStore();
+
+  const handleStartInterview = useCallback(() => {
+    const problem = initialProblem ?? STARTER_PROBLEMS[0];
+    const greeting =
+      "Hi, welcome to the technical interview. Let's start with something straightforward. " +
+      problem;
+    addMessage("agent", greeting);
+    setPreviousState(greeting);
+    setInterviewStarted(true);
+    setInitialGreetingText(greeting);
+  }, [initialProblem, addMessage, setPreviousState, setInterviewStarted, setInitialGreetingText]);
 
   const runEvaluate = useCallback(
     async (transcriptText: string) => {
@@ -87,7 +120,7 @@ export default function InterviewUI() {
   return (
     <div className="h-screen flex flex-col p-4 text-[#e5e5e5] font-bold">
       <h1 className="text-xl font-bold mb-2" style={{ fontFamily: "Calibri, sans-serif" }}>
-        System design interview
+        Technical interview
       </h1>
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-4 min-h-0">
         {/* Left: whiteboard + mic */}
@@ -101,11 +134,32 @@ export default function InterviewUI() {
           </div>
         </div>
 
-        {/* Right: dialogue / chat */}
+        {/* Right: dialogue / chat or startup */}
         <div className="flex flex-col min-h-0 border-2 border-[#3f3f3f] rounded-sm p-3 bg-[#2a2530]">
           <h2 className="text-sm font-bold text-[#e5e5e5] mb-2" style={{ fontFamily: "Calibri, sans-serif" }}>
             Conversation
           </h2>
+          {!interviewStarted ? (
+            <div className="flex-1 flex flex-col justify-center min-h-0">
+              <p className="text-sm font-bold text-[#e5e5e5] mb-4">
+                Welcome. We will start with an easy question to get going.
+              </p>
+              <p className="text-sm text-[#c4b5d0] mb-2">First question:</p>
+              <p className="text-sm font-bold text-[#e5e5e5] mb-6 px-3 py-2 bg-[#3f3f3f] rounded-sm border-l-4 border-[#941870] min-h-[4rem]">
+                {initialProblem ?? "Choosing your first question…"}
+              </p>
+              <button
+                type="button"
+                onClick={handleStartInterview}
+                disabled={!initialProblem}
+                className="w-full py-2.5 px-4 rounded-sm font-bold text-[#e5e5e5] bg-[#941870] hover:bg-[#b01d8a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ fontFamily: "Calibri, sans-serif" }}
+              >
+                Start interview
+              </button>
+            </div>
+          ) : (
+            <>
           <div className="flex-1 overflow-y-auto space-y-3 mb-3 min-h-0">
             {messages.length === 0 && !transcript && (
               <p className="text-sm font-bold text-[#e5e5e5]">
@@ -142,6 +196,8 @@ export default function InterviewUI() {
           </div>
           {error && (
             <p className="text-xs font-bold text-[#f87171] mt-2">{error}</p>
+          )}
+            </>
           )}
         </div>
       </div>
