@@ -42,38 +42,44 @@ End-to-end: **mic + whiteboard → STT → transcript → pause → evaluate (cr
 
 ### Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Browser (Next.js)                                                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │ Whiteboard   │  │ SpeechListener│  │ Payload      │  │ AudioPlayer  │ │
-│  │ (drawing)    │  │ (mic → PCM)  │  │ Dispatcher   │  │ (TTS playback)│ │
-│  └──────┬───────┘  └──────┬───────┘  │ (1.5s pause) │  └──────┬───────┘ │
-│         │                 │         └──────┬───────┘         │         │
-│         │                 │                │                 │         │
-│         │                 │         runEvaluate(transcript,   │         │
-│         │                 │         diagram_base64,          │         │
-│         │                 │         previous_state)          │         │
-│         │                 │                │                 │         │
-└─────────┼─────────────────┼────────────────┼─────────────────┼─────────┘
-          │                 │                │                 │
-          │    WebSocket    │                │ POST /evaluate   │ POST /tts/stream
-          │    /ws/transcribe│                │                 │
-          ▼                 ▼                ▼                 ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Backend (FastAPI)                                                       │
-│  ┌──────────────────────┐  ┌─────────────────────────────────────────┐│
-│  │ AWS Transcribe        │  │ POST /evaluate                            ││
-│  │ Streaming             │  │   → pipeline.run_evaluation_pipeline()   ││
-│  │ (PCM → transcript)     │  │   → Sonnet: critique (diagram+transcript)││
-│  └──────────────────────┘  │   → Haiku:  router (emotion + response)   ││
-│                             │   → return scores, follow_up, feedback,   ││
-│  ┌──────────────────────┐  │        minimax_emotion                   ││
-│  │ Minimax TTS           │  └─────────────────────────────────────────┘│
-│  │ POST /tts/stream      │  ┌─────────────────────────────────────────┐│
-│  │ (text, emotion→PCM)   │  │ Bedrock: Claude Sonnet + Haiku           ││
-│  └──────────────────────┘  └─────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Browser["Browser (Next.js)"]
+        WB["Whiteboard<br/>(drawing)"]
+        SL["SpeechListener<br/>(mic → PCM)"]
+        PD["Payload Dispatcher<br/>(1.5s pause detection)"]
+        AP["AudioPlayer<br/>(TTS playback)"]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        subgraph STT["AWS Transcribe Streaming"]
+            TS["PCM → transcript chunks"]
+        end
+
+        subgraph Eval["POST /evaluate"]
+            Pipeline["pipeline.run_evaluation_pipeline()"]
+            subgraph Parallel["Parallel LLM calls (Bedrock)"]
+                Sonnet["Claude Sonnet<br/>Critique: diagram + transcript<br/>→ scores, feedback, follow-up"]
+                Haiku["Claude Haiku<br/>Router: emotion + response"]
+            end
+            Pipeline --> Sonnet
+            Pipeline --> Haiku
+        end
+
+        subgraph TTS["POST /tts/stream"]
+            Minimax["Minimax TTS<br/>text + emotion → PCM audio"]
+        end
+    end
+
+    SL -- "WebSocket /ws/transcribe<br/>(binary PCM 16kHz)" --> TS
+    TS -- "JSON transcript chunks" --> PD
+    WB -- "diagram base64" --> PD
+    PD -- "POST /evaluate<br/>(transcript, diagram, previous_state)" --> Pipeline
+    Sonnet --> Merge["Merge → InterviewEvaluation<br/>(scores, feedback, emotion)"]
+    Haiku --> Merge
+    Merge -- "evaluation response" --> AP
+    AP -- "POST /tts/stream<br/>(text, emotion)" --> Minimax
+    Minimax -- "raw PCM 24kHz" --> AP
 ```
 
 ### Project layout
