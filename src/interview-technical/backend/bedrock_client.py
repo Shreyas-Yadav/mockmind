@@ -13,8 +13,8 @@ import boto3
 from botocore.config import Config
 
 # Bedrock model IDs (Claude on Bedrock)
-SONNET_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-HAIKU_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"
+SONNET_ID = "anthropic.claude-sonnet-4-6"
+HAIKU_ID = "anthropic.claude-haiku-4-5-20251001-v1:0"
 
 
 def get_bedrock_runtime():
